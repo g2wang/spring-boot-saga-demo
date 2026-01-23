@@ -1,5 +1,6 @@
 package com.example.saga.orchestrator;
 
+import com.example.saga.config.KafkaTopicConfig;
 import com.example.saga.dto.OrderRequest;
 import com.example.saga.events.*;
 import com.example.saga.model.OrderSaga;
@@ -22,12 +23,6 @@ public class SagaOrchestrator {
     
     private final OrderSagaRepository sagaRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    
-    private static final String ORDER_TOPIC = "order-events";
-    private static final String PAYMENT_TOPIC = "payment-events";
-    private static final String INVENTORY_TOPIC = "inventory-events";
-    private static final String COMPENSATE_PAYMENT_TOPIC = "compensate-payment";
-    private static final String COMPENSATE_INVENTORY_TOPIC = "compensate-inventory";
     
     @Transactional
     public OrderSaga startSaga(OrderRequest request) {
@@ -56,7 +51,7 @@ public class SagaOrchestrator {
                 .amount(request.getAmount())
                 .build();
         
-        kafkaTemplate.send(ORDER_TOPIC, orderId, event);
+        kafkaTemplate.send(KafkaTopicConfig.ORDER_EVENTS_TOPIC, orderId, event);
         log.info("Order created event sent for orderId: {}", orderId);
         
         updateSagaStatus(saga, SagaStatus.ORDER_CREATED, SagaStep.PROCESS_PAYMENT);
@@ -69,7 +64,7 @@ public class SagaOrchestrator {
     
     private void processPayment(OrderSaga saga) {
         log.info("Processing payment for orderId: {}", saga.getOrderId());
-        kafkaTemplate.send(PAYMENT_TOPIC, saga.getOrderId(), 
+        kafkaTemplate.send(KafkaTopicConfig.PAYMENT_EVENTS_TOPIC, saga.getOrderId(), 
             OrderCreatedEvent.builder()
                 .orderId(saga.getOrderId())
                 .customerId(saga.getCustomerId())
@@ -77,7 +72,7 @@ public class SagaOrchestrator {
                 .build());
     }
     
-    @KafkaListener(topics = "payment-processed", groupId = "saga-group")
+    @KafkaListener(topics = KafkaTopicConfig.PAYMENT_PROCESSED_TOPIC, groupId = "saga-group")
     @Transactional
     public void handlePaymentProcessed(PaymentProcessedEvent event) {
         log.info("Received payment processed event: {}", event);
@@ -99,7 +94,7 @@ public class SagaOrchestrator {
     
     private void reserveInventory(OrderSaga saga) {
         log.info("Reserving inventory for orderId: {}", saga.getOrderId());
-        kafkaTemplate.send(INVENTORY_TOPIC, saga.getOrderId(),
+        kafkaTemplate.send(KafkaTopicConfig.INVENTORY_EVENTS_TOPIC, saga.getOrderId(),
             OrderCreatedEvent.builder()
                 .orderId(saga.getOrderId())
                 .productId(saga.getProductId())
@@ -107,7 +102,7 @@ public class SagaOrchestrator {
                 .build());
     }
     
-    @KafkaListener(topics = "inventory-reserved", groupId = "saga-group")
+    @KafkaListener(topics = KafkaTopicConfig.INVENTORY_RESERVED_TOPIC, groupId = "saga-group")
     @Transactional
     public void handleInventoryReserved(InventoryReservedEvent event) {
         log.info("Received inventory reserved event: {}", event);
@@ -143,7 +138,7 @@ public class SagaOrchestrator {
                     .orderId(saga.getOrderId())
                     .paymentId(saga.getPaymentId())
                     .build();
-            kafkaTemplate.send(COMPENSATE_PAYMENT_TOPIC, saga.getOrderId(), event);
+            kafkaTemplate.send(KafkaTopicConfig.COMPENSATE_PAYMENT_TOPIC, saga.getOrderId(), event);
         }
         
         // Compensate inventory if it was reserved
@@ -152,7 +147,7 @@ public class SagaOrchestrator {
                     .orderId(saga.getOrderId())
                     .reservationId(saga.getReservationId())
                     .build();
-            kafkaTemplate.send(COMPENSATE_INVENTORY_TOPIC, saga.getOrderId(), event);
+            kafkaTemplate.send(KafkaTopicConfig.COMPENSATE_INVENTORY_TOPIC, saga.getOrderId(), event);
         }
         
         updateSagaStatus(saga, SagaStatus.COMPENSATED, saga.getCurrentStep());

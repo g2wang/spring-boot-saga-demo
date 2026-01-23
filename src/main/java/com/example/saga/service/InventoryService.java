@@ -1,5 +1,6 @@
 package com.example.saga.service;
 
+import com.example.saga.config.KafkaTopicConfig;
 import com.example.saga.events.OrderCreatedEvent;
 import com.example.saga.events.InventoryReservedEvent;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ public class InventoryService {
     
     private final KafkaTemplate<String, Object> kafkaTemplate;
     
-    @KafkaListener(topics = "inventory-events", groupId = "inventory-service-group")
+    @KafkaListener(topics = KafkaTopicConfig.INVENTORY_EVENTS_TOPIC, groupId = "inventory-service-group")
     public void reserveInventory(OrderCreatedEvent event) {
         log.info("Reserving inventory for orderId: {}, productId: {}, quantity: {}", 
                 event.getOrderId(), event.getProductId(), event.getQuantity());
@@ -28,7 +29,6 @@ public class InventoryService {
             
             // Simulate inventory availability (80% success rate)
             boolean success = Math.random() > 0.2;
-            
             String reservationId = success ? UUID.randomUUID().toString() : null;
             String message = success ? "Inventory reserved" : "Insufficient stock";
             
@@ -39,7 +39,7 @@ public class InventoryService {
                     .message(message)
                     .build();
             
-            kafkaTemplate.send("inventory-reserved", event.getOrderId(), reservedEvent);
+            kafkaTemplate.send(KafkaTopicConfig.INVENTORY_RESERVED_TOPIC, event.getOrderId(), reservedEvent);
             log.info("Inventory reservation result for orderId: {}, Success: {}", 
                     event.getOrderId(), success);
             
@@ -49,7 +49,7 @@ public class InventoryService {
         }
     }
     
-    @KafkaListener(topics = "compensate-inventory", groupId = "inventory-service-group")
+    @KafkaListener(topics = KafkaTopicConfig.COMPENSATE_INVENTORY_TOPIC, groupId = "inventory-service-group")
     public void compensateInventory(com.example.saga.events.CompensateInventoryEvent event) {
         log.warn("Compensating inventory for orderId: {}, reservationId: {}", 
                 event.getOrderId(), event.getReservationId());

@@ -1,5 +1,6 @@
 package com.example.saga.service;
 
+import com.example.saga.config.KafkaTopicConfig;
 import com.example.saga.events.OrderCreatedEvent;
 import com.example.saga.events.PaymentProcessedEvent;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ public class PaymentService {
     
     private final KafkaTemplate<String, Object> kafkaTemplate;
     
-    @KafkaListener(topics = "payment-events", groupId = "payment-service-group")
+    @KafkaListener(topics = KafkaTopicConfig.PAYMENT_EVENTS_TOPIC, groupId = "payment-service-group")
     public void processPayment(OrderCreatedEvent event) {
         log.info("Processing payment for orderId: {}", event.getOrderId());
         
@@ -27,7 +28,6 @@ public class PaymentService {
             
             // Simulate payment success (90% success rate)
             boolean success = Math.random() > 0.1;
-            
             String paymentId = success ? UUID.randomUUID().toString() : null;
             String message = success ? "Payment successful" : "Insufficient funds";
             
@@ -38,7 +38,7 @@ public class PaymentService {
                     .message(message)
                     .build();
             
-            kafkaTemplate.send("payment-processed", event.getOrderId(), processedEvent);
+            kafkaTemplate.send(KafkaTopicConfig.PAYMENT_PROCESSED_TOPIC, event.getOrderId(), processedEvent);
             log.info("Payment processed for orderId: {}, Success: {}", event.getOrderId(), success);
             
         } catch (InterruptedException e) {
@@ -47,7 +47,7 @@ public class PaymentService {
         }
     }
     
-    @KafkaListener(topics = "compensate-payment", groupId = "payment-service-group")
+    @KafkaListener(topics = KafkaTopicConfig.COMPENSATE_PAYMENT_TOPIC, groupId = "payment-service-group")
     public void compensatePayment(com.example.saga.events.CompensatePaymentEvent event) {
         log.warn("Compensating payment for orderId: {}, paymentId: {}", 
                 event.getOrderId(), event.getPaymentId());
@@ -62,4 +62,3 @@ public class PaymentService {
         }
     }
 }
-
