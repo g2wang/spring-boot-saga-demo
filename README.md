@@ -66,8 +66,8 @@ In a saga orchestration pattern, a central orchestrator coordinates the saga wor
 
 Before running this project, ensure you have the following installed:
 
-- **Java 17** or higher
-- **Gradle 8.x**
+- **Java 25** or higher
+- **Gradle 9.x**
 - **Docker** (for running Kafka)
 - **Git**
 
