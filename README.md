@@ -445,9 +445,9 @@ SELECT STATUS, COUNT(*) FROM ORDER_SAGA GROUP BY STATUS;
 
 | Component | Technology | Version |
 |-----------|-----------|---------|
-| Framework | Spring Boot | 3.2.0 |
-| Language | Java | 17 |
-| Build Tool | Gradle | 8.x |
+| Framework | Spring Boot | 4.0.1 |
+| Language | Java | 25 |
+| Build Tool | Gradle | 9.x |
 | Messaging | Apache Kafka | 3.7.0 |
 | Database | H2 (in-memory) | Latest |
 | ORM | Spring Data JPA | 3.2.0 |
