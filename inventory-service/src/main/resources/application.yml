@@ -1,30 +1,11 @@
 spring:
   application:
-    name: saga-orchestration-demo
-
-  datasource:
-    url: jdbc:h2:mem:sagadb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-
+    name: inventory-service
+  
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: saga-group
+      group-id: inventory-service-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
@@ -35,9 +16,9 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
-  port: 8080
+  port: 8083
 
 logging:
   level:
-    com.example.saga: DEBUG
-    org.springframework.kafka: INFO
+    com.example.inventory: DEBUG
+
